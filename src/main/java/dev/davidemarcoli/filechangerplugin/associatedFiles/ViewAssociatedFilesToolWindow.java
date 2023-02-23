@@ -26,10 +26,9 @@ import java.util.regex.Pattern;
 
 public class ViewAssociatedFilesToolWindow {
 
+    AppSettingsState settings = AppSettingsState.getInstance();
     private JList<File> fileList;
     private JPanel myToolWindowContent;
-
-    AppSettingsState settings = AppSettingsState.getInstance();
 
     public ViewAssociatedFilesToolWindow(ToolWindow toolWindow) {
         MessageBus messageBus = toolWindow.getProject().getMessageBus();

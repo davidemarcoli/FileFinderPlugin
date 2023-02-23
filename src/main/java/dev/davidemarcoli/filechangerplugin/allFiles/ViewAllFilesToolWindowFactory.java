@@ -11,17 +11,17 @@ import org.jetbrains.annotations.NotNull;
 
 public class ViewAllFilesToolWindowFactory implements ToolWindowFactory {
 
-  /**
-   * Create the tool window content.
-   *
-   * @param project    current project
-   * @param toolWindow current tool window
-   */
-  public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-    ViewAllFilesToolWindow viewAllFilesToolWindow = new ViewAllFilesToolWindow(toolWindow);
-    ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
-    Content content = contentFactory.createContent(viewAllFilesToolWindow.getContent(), "", false);
-    toolWindow.getContentManager().addContent(content);
-  }
+    /**
+     * Create the tool window content.
+     *
+     * @param project    current project
+     * @param toolWindow current tool window
+     */
+    public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        ViewAllFilesToolWindow viewAllFilesToolWindow = new ViewAllFilesToolWindow(toolWindow);
+        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
+        Content content = contentFactory.createContent(viewAllFilesToolWindow.getContent(), "", false);
+        toolWindow.getContentManager().addContent(content);
+    }
 
 }
