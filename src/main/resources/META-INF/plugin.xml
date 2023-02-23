@@ -24,7 +24,22 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="Sample Calendar" secondary="true" icon="AllIcons.General.Modified" anchor="right"
-                    factoryClass="dev.davidemarcoli.filechangerplugin.ViewFilesToolWindowFactory"/>
+        <toolWindow id="View All Files" secondary="true" icon="AllIcons.General.Modified" anchor="right"
+                    factoryClass="dev.davidemarcoli.filechangerplugin.allFiles.ViewAllFilesToolWindowFactory"/>
+        <toolWindow id="View Associated Files" secondary="true" icon="AllIcons.General.Modified" anchor="right"
+                    factoryClass="dev.davidemarcoli.filechangerplugin.associatedFiles.ViewAssociatedFilesToolWindowFactory"/>
+        <applicationService
+                serviceImplementation="dev.davidemarcoli.filechangerplugin.associatedFiles.settings.AppSettingsState"/>
+        <applicationConfigurable
+                parentId="tools"
+                instance="dev.davidemarcoli.filechangerplugin.associatedFiles.settings.AppSettingsConfigurable"
+                id="org.intellij.sdk.settings.AppSettingsConfigurable"
+                displayName="File Changer Plugin"/>
     </extensions>
+
+    <applicationListeners>
+        <listener
+                class="dev.davidemarcoli.filechangerplugin.associatedFiles.FileChangeListener"
+                topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </applicationListeners>
 </idea-plugin>
