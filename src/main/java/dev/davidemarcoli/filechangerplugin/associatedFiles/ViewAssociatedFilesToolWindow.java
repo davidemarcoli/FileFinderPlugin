@@ -4,89 +4,98 @@ package dev.davidemarcoli.filechangerplugin.associatedFiles;
 
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.DataContext;
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.editor.event.EditorFactoryEvent;
-import com.intellij.openapi.editor.event.EditorFactoryListener;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileEditor.OpenFileDescriptor;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.util.messages.MessageBus;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.io.File;
-import java.util.Arrays;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 public class ViewAssociatedFilesToolWindow {
 
-  private JList fileList;
-  private JPanel myToolWindowContent;
+    private JList<String> fileList;
+    private JPanel myToolWindowContent;
 
-  public ViewAssociatedFilesToolWindow(ToolWindow toolWindow) {
-    getOpenFile();
-  }
-
-  public void getOpenFile() {
-//    tree = new Tree(addNodes(null, new File(".")));
-
-    DataContext dataContext = DataManager.getInstance().getDataContext();
-    Project project = (Project) dataContext.getData("project");
-    System.out.println(project.getBasePath());
-
-    Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
-
-    EditorFactory editorFactory = EditorFactory.getInstance();
-    editorFactory.addEditorFactoryListener(new EditorFactoryListener() {
-      @Override
-      public void editorCreated(@NotNull EditorFactoryEvent editorFactoryEvent) {
-//        Document currentDoc = FileEditorManager.getInstance(project).getSelectedTextEditor().getDocument();
-//        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDoc);
-        System.out.println("Editor Created");
-        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(editorFactoryEvent.getEditor().getDocument());
-        String fileName = currentFile.getPath();
-        System.out.println(fileName);
-
-//        System.out.println(editorFactoryEvent.getEditor().getDocument().getText());
-      }
-
-    });
-  }
-
-  File searchFile(File file, String search) {
-    if (file.isDirectory()) {
-      File[] arr = file.listFiles();
-      for (File f : arr) {
-        File found = searchFile(f, search);
-        if (found != null)
-          return found;
-      }
-    } else {
-      if (file.getName().equals(search)) {
-        return file;
-      }
+    public ViewAssociatedFilesToolWindow(ToolWindow toolWindow) {
+        MessageBus messageBus = toolWindow.getProject().getMessageBus();
+        messageBus.connect().subscribe(FileChangeNotifier.FILE_CHANGE_NOTIFIER_TOPIC, new FileChangeNotifier() {
+            @Override
+            public void fileChanged(String fileName) {
+                System.out.println("File changed: " + fileName);
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    getAssociatedFiles(fileName);
+                });
+//                getAssociatedFiles(fileName);
+            }
+        });
     }
-    return null;
-  }
 
-  public Dimension getMinimumSize() {
-    return new Dimension(200, 400);
-  }
+    final String[] keywords = {"Controller", "Service", "Repository", "Component", "Module", "Model", "Interface", "Enum", "Class", "Directive", "Pipe", "Guard", "Resolver", "Interceptor", "Service", "Component", "Module", "Model", "Interface", "Enum", "Class", "Directive", "Pipe", "Guard", "Resolver", "Interceptor"};
 
-  public Dimension getPreferredSize() {
-    return new Dimension(200, 400);
-  }
+    public void getAssociatedFiles(String fileName) {
 
-  public JPanel getContent() {
-    return myToolWindowContent;
-  }
+        DataContext dataContext = DataManager.getInstance().getDataContext();
+        Project project = (Project) dataContext.getData("project");
+        System.out.println("Project: " + project.getName());
+        System.out.println("Base path: " + project.getBasePath());
+
+        String modifiedFileName = fileName.substring(0, fileName.lastIndexOf("."));
+        for (String keyword : keywords) {
+            modifiedFileName = modifiedFileName.replaceAll(keyword, "");
+        }
+        modifiedFileName = modifiedFileName.replaceAll(" ", "");
+        modifiedFileName = modifiedFileName.replaceAll("-", "");
+        modifiedFileName = modifiedFileName.replaceAll("_", "");
+
+        ArrayList<File> files = searchFiles(new File(project.getBasePath()), modifiedFileName);
+        ArrayList<String> fileNames = new ArrayList<>();
+        for (File file : files) {
+            fileNames.add(file.getName());
+        }
+        fileList.setListData(fileNames.toArray(String[]::new));
+    }
+
+    ArrayList<File> searchFiles(File file, String search) {
+
+        ArrayList<File> found = new ArrayList<>();
+
+        String[] possibleFilePattern = {search + "Service.java", search + "ServiceImpl.java", search + "Controller.java", search + "Repository.java",
+                search + ".ts", search + ".service.ts", search + "-component.ts", search + "-component.html", search + "-component.scss", search + "-component.spec.ts"};
+
+        if (file.isDirectory()) {
+//            System.out.println("Searching in: " + file.getName());
+            File[] filesInDir = file.listFiles();
+            for (File f : filesInDir) {
+                ArrayList<File> foundFiles = searchFiles(f, search);
+                found.addAll(foundFiles);
+            }
+        } else {
+//            System.out.println("File: " + file.getName());
+            for (String pattern : possibleFilePattern) {
+                Pattern regexPattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+                if (regexPattern.matcher(file.getName()).matches()) {
+                    System.out.println("Found: " + file.getName());
+                    found.add(file);
+                }
+            }
+        }
+        return found;
+    }
+
+    public Dimension getMinimumSize() {
+        return new Dimension(200, 400);
+    }
+
+    public Dimension getPreferredSize() {
+        return new Dimension(200, 400);
+    }
+
+    public JPanel getContent() {
+        return myToolWindowContent;
+    }
 
 }
