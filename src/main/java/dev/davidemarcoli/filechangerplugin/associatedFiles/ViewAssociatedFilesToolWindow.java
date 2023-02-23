@@ -75,6 +75,8 @@ public class ViewAssociatedFilesToolWindow {
         modifiedFileName = modifiedFileName.replaceAll("-", "");
         modifiedFileName = modifiedFileName.replaceAll("_", "");
 
+        System.out.println("Modified file name: " + modifiedFileName);
+
         ArrayList<File> files = new ArrayList<>();
 
         for (String folderName : settings.searchedFolders) {

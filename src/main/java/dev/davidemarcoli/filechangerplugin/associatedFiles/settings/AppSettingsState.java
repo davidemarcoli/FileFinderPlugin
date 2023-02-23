@@ -22,7 +22,7 @@ public class AppSettingsState implements PersistentStateComponent<AppSettingsSta
     public String[] searchedFolders = {"backend/src/main/java", "frontend/src/app"};
     public String[] searchedFiles = {"%Service.java", "%ServiceImpl.java", "%Controller.java", "%Repository.java", "%DTO.java", "%Mapper.java",
             "%.ts", "%.service.ts", "%-component.ts", "%-component.html", "%-component.scss", "%-component.spec.ts"};
-    public String[] fileKeywords = {"Controller", "Service", "Repository", "Component", "Module", "Model", "DTO", "Mapper", "Interface", "Enum", "Class", "Directive", "Pipe", "Guard", "Resolver", "Interceptor", "Service", "Component", "Module", "Model", "Interface", "Enum", "Class", "Directive", "Pipe", "Guard", "Resolver", "Interceptor"};
+    public String[] fileKeywords = {"Controller", "ServiceImpl", "Service", "Repository", "Component", "Module", "Model", "DTO", "Mapper", "Interface", "Enum", "Class", "Directive", "Pipe", "Guard", "Resolver", "Interceptor", "Service", "Component", "Module", "Model", "Interface", "Enum", "Class", "Directive", "Pipe", "Guard", "Resolver", "Interceptor"};
 
     public static AppSettingsState getInstance() {
         return ApplicationManager.getApplication().getService(AppSettingsState.class);

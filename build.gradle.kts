@@ -32,12 +32,16 @@ tasks {
     }
 
     signPlugin {
-        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
-        privateKey.set(System.getenv("PRIVATE_KEY"))
-        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
+        certificateChain.set(System.getenv("INTELLI_CERTIFICATE_CHAIN"))
+        privateKey.set(System.getenv("INTELLI_PRIVATE_KEY"))
+        password.set(System.getenv("INTELLI_PRIVATE_KEY_PASSWORD"))
     }
 
     publishPlugin {
-        token.set(System.getenv("PUBLISH_TOKEN"))
+        token.set(System.getenv("INTELLI_PUBLISH_TOKEN"))
     }
+
+//    runIde {
+//        jbrVersion.set("jbr_jcef-11_0_15-linux-x64-b2043.56")
+//    }
 }
