@@ -24,6 +24,7 @@ public class FileChangeListener implements FileEditorManagerListener {
 
     @Override
     public void selectionChanged(@NotNull FileEditorManagerEvent event) {
+        if (event.getNewFile() == null) return;
         System.out.println("File selected: " + event.getNewFile().getName());
         MessageBus messageBus = event.getManager().getProject().getMessageBus();
         messageBus.syncPublisher(FileChangeNotifier.FILE_CHANGE_NOTIFIER_TOPIC).fileChanged(event.getNewFile().getName());
