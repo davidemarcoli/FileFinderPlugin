@@ -11,8 +11,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.ui.JBColor;
 import com.intellij.util.messages.MessageBus;
+import dev.davidemarcoli.filechangerplugin.associatedFiles.settings.AppSettingsState;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,12 +21,15 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 public class ViewAssociatedFilesToolWindow {
 
     private JList<File> fileList;
     private JPanel myToolWindowContent;
+
+    AppSettingsState settings = AppSettingsState.getInstance();
 
     public ViewAssociatedFilesToolWindow(ToolWindow toolWindow) {
         MessageBus messageBus = toolWindow.getProject().getMessageBus();
@@ -55,7 +58,7 @@ public class ViewAssociatedFilesToolWindow {
         fileList.setCellRenderer(new FileListRenderer());
     }
 
-    final String[] keywords = {"Controller", "Service", "Repository", "Component", "Module", "Model", "DTO", "Mapper", "Interface", "Enum", "Class", "Directive", "Pipe", "Guard", "Resolver", "Interceptor", "Service", "Component", "Module", "Model", "Interface", "Enum", "Class", "Directive", "Pipe", "Guard", "Resolver", "Interceptor"};
+//    final String[] keywords = {"Controller", "Service", "Repository", "Component", "Module", "Model", "DTO", "Mapper", "Interface", "Enum", "Class", "Directive", "Pipe", "Guard", "Resolver", "Interceptor", "Service", "Component", "Module", "Model", "Interface", "Enum", "Class", "Directive", "Pipe", "Guard", "Resolver", "Interceptor"};
 
     public void getAssociatedFiles(String fileName) {
 
@@ -65,15 +68,20 @@ public class ViewAssociatedFilesToolWindow {
 //        System.out.println("Base path: " + project.getBasePath());
 
         String modifiedFileName = fileName.substring(0, fileName.lastIndexOf("."));
-        for (String keyword : keywords) {
+        for (String keyword : settings.fileKeywords) {
             modifiedFileName = modifiedFileName.replaceAll(keyword, "");
         }
         modifiedFileName = modifiedFileName.replaceAll(" ", "");
         modifiedFileName = modifiedFileName.replaceAll("-", "");
         modifiedFileName = modifiedFileName.replaceAll("_", "");
 
-        ArrayList<File> files = searchFiles(new File(project.getBasePath()), modifiedFileName);
+        ArrayList<File> files = new ArrayList<>();
+
+        for (String folderName : settings.searchedFolders) {
+            files.addAll(searchFiles(new File(project.getBasePath() + "/" + folderName), modifiedFileName));
+        }
         fileList.setListData(files.toArray(File[]::new));
+
 //        ArrayList<String> fileNames = new ArrayList<>();
 //        for (File file : files) {
 //            fileNames.add(file.getName());
@@ -85,8 +93,12 @@ public class ViewAssociatedFilesToolWindow {
 
         ArrayList<File> found = new ArrayList<>();
 
-        String[] possibleFilePattern = {search + "Service.java", search + "ServiceImpl.java", search + "Controller.java", search + "Repository.java", search + "DTO.java", search + "Mapper.java",
-                search + ".ts", search + ".service.ts", search + "-component.ts", search + "-component.html", search + "-component.scss", search + "-component.spec.ts"};
+//        String[] possibleFilePattern = {search + "Service.java", search + "ServiceImpl.java", search + "Controller.java", search + "Repository.java", search + "DTO.java", search + "Mapper.java",
+//                search + ".ts", search + ".service.ts", search + "-component.ts", search + "-component.html", search + "-component.scss", search + "-component.spec.ts"};
+
+
+        String[] possibleFilePattern = Arrays.stream(settings.searchedFiles).map(s -> s.replaceAll("%", search)
+        ).toArray(String[]::new);
 
         if (file.isDirectory()) {
 //            System.out.println("Searching in: " + file.getName());

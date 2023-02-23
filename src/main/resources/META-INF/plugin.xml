@@ -28,6 +28,13 @@
                     factoryClass="dev.davidemarcoli.filechangerplugin.allFiles.ViewAllFilesToolWindowFactory"/>
         <toolWindow id="View Associated Files" secondary="true" icon="AllIcons.General.Modified" anchor="right"
                     factoryClass="dev.davidemarcoli.filechangerplugin.associatedFiles.ViewAssociatedFilesToolWindowFactory"/>
+        <applicationService
+                serviceImplementation="dev.davidemarcoli.filechangerplugin.associatedFiles.settings.AppSettingsState"/>
+        <applicationConfigurable
+                parentId="tools"
+                instance="dev.davidemarcoli.filechangerplugin.associatedFiles.settings.AppSettingsConfigurable"
+                id="org.intellij.sdk.settings.AppSettingsConfigurable"
+                displayName="File Changer Plugin"/>
     </extensions>
 
     <applicationListeners>
