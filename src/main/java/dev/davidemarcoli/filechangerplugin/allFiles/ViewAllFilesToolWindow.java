@@ -1,6 +1,6 @@
 // Copyright 2000-2022 JetBrains s.r.o. and other contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 
-package dev.davidemarcoli.filechangerplugin;
+package dev.davidemarcoli.filechangerplugin.allFiles;
 
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.DataContext;
@@ -16,11 +16,10 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.io.File;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Vector;
 
-public class ViewFilesToolWindow {
+public class ViewAllFilesToolWindow {
 
   private JButton refreshToolWindowButton;
   private JButton hideToolWindowButton;
@@ -28,7 +27,7 @@ public class ViewFilesToolWindow {
   private JTree tree;
   private JPanel myToolWindowContent;
 
-  public ViewFilesToolWindow(ToolWindow toolWindow) {
+  public ViewAllFilesToolWindow(ToolWindow toolWindow) {
     hideToolWindowButton.addActionListener(e -> toolWindow.hide(null));
     refreshToolWindowButton.addActionListener(e -> getFileTree());
 
@@ -113,6 +112,22 @@ public class ViewFilesToolWindow {
       curDir.add(new DefaultMutableTreeNode(files.elementAt(fnum)));
     }
     return curDir;
+  }
+
+  File searchFile(File file, String search) {
+    if (file.isDirectory()) {
+      File[] arr = file.listFiles();
+      for (File f : arr) {
+        File found = searchFile(f, search);
+        if (found != null)
+          return found;
+      }
+    } else {
+      if (file.getName().equals(search)) {
+        return file;
+      }
+    }
+    return null;
   }
 
   public Dimension getMinimumSize() {
