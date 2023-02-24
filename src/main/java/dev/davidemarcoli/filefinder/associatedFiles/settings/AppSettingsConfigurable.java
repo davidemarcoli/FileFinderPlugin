@@ -1,4 +1,4 @@
-package dev.davidemarcoli.filechangerplugin.associatedFiles.settings;
+package dev.davidemarcoli.filefinder.associatedFiles.settings;
 
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;

@@ -1,6 +1,6 @@
 // Copyright 2000-2022 JetBrains s.r.o. and other contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 
-package dev.davidemarcoli.filechangerplugin.associatedFiles;
+package dev.davidemarcoli.filefinder.associatedFiles;
 
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.DataContext;
@@ -12,7 +12,7 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.util.messages.MessageBus;
-import dev.davidemarcoli.filechangerplugin.associatedFiles.settings.AppSettingsState;
+import dev.davidemarcoli.filefinder.associatedFiles.settings.AppSettingsState;
 
 import javax.swing.*;
 import java.awt.*;
@@ -34,6 +34,10 @@ public class ViewAssociatedFilesToolWindow {
         MessageBus messageBus = toolWindow.getProject().getMessageBus();
         messageBus.connect().subscribe(FileChangeNotifier.FILE_CHANGE_NOTIFIER_TOPIC, fileName -> {
             System.out.println("File changed: " + fileName);
+            if (fileName == null) {
+                fileList.setListData(new File[]{});
+                return;
+            }
             ApplicationManager.getApplication().invokeLater(new Thread(() -> getAssociatedFiles(fileName)));
         });
 

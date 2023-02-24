@@ -1,4 +1,4 @@
-package dev.davidemarcoli.filechangerplugin.associatedFiles.settings;
+package dev.davidemarcoli.filefinder.associatedFiles.settings;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;

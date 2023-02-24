@@ -1,4 +1,4 @@
-package dev.davidemarcoli.filechangerplugin.associatedFiles;
+package dev.davidemarcoli.filefinder.associatedFiles;
 
 import com.intellij.util.messages.Topic;
 

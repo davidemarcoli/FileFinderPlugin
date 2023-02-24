@@ -1,1 +1,1 @@
-rootProject.name = "FileChangerPlugin"
+rootProject.name = "FileFinder"

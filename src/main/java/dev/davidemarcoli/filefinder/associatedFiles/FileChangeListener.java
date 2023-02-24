@@ -1,4 +1,4 @@
-package dev.davidemarcoli.filechangerplugin.associatedFiles;
+package dev.davidemarcoli.filefinder.associatedFiles;
 
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
@@ -16,6 +16,8 @@ public class FileChangeListener implements FileEditorManagerListener {
     @Override
     public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
         System.out.println("File closed: " + file.getName());
+        MessageBus messageBus = source.getProject().getMessageBus();
+        messageBus.syncPublisher(FileChangeNotifier.FILE_CHANGE_NOTIFIER_TOPIC).fileChanged(null);
     }
 
     @Override
