@@ -68,11 +68,12 @@ public class ViewAssociatedFilesToolWindow {
 
         String modifiedFileName = fileName.substring(0, fileName.lastIndexOf("."));
         for (String keyword : settings.fileKeywords) {
-            modifiedFileName = modifiedFileName.replaceAll(keyword, "");
+            modifiedFileName = modifiedFileName.replaceAll("(?i)" + keyword, "");
         }
         modifiedFileName = modifiedFileName.replaceAll(" ", "");
         modifiedFileName = modifiedFileName.replaceAll("-", "");
         modifiedFileName = modifiedFileName.replaceAll("_", "");
+        modifiedFileName = modifiedFileName.replaceAll("\\.", "");
 
         System.out.println("Modified file name: " + modifiedFileName);
 

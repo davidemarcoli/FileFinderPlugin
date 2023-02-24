@@ -21,12 +21,23 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
 
+    <change-notes><![CDATA[
+    <h2>Improvements</h2>
+    <ul>
+      <li>Add Icons to collapsed Tool Windows</li>
+    </ul>
+    <h2>Bug Fixes</h2>
+    <ul>
+      <li>Fixed bug that prevents files with a "." from being found</li>
+    </ul>
+]]></change-notes>
+
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="View All Files" secondary="true" icon="AllIcons.General.Modified" anchor="right"
+        <toolWindow id="View All Files" secondary="true" icon="MyIcons.listRight" anchor="right"
                     factoryClass="dev.davidemarcoli.filechangerplugin.allFiles.ViewAllFilesToolWindowFactory"/>
-        <toolWindow id="View Associated Files" secondary="true" icon="AllIcons.General.Modified" anchor="right"
+        <toolWindow id="View Associated Files" secondary="true" icon="MyIcons.fileIcon3" anchor="right"
                     factoryClass="dev.davidemarcoli.filechangerplugin.associatedFiles.ViewAssociatedFilesToolWindowFactory"/>
         <applicationService
                 serviceImplementation="dev.davidemarcoli.filechangerplugin.associatedFiles.settings.AppSettingsState"/>
