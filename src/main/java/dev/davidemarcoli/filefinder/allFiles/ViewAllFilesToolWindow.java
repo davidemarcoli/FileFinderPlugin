@@ -1,11 +1,13 @@
-// Copyright 2000-2022 JetBrains s.r.o. and other contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
-
 package dev.davidemarcoli.filefinder.allFiles;
 
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -16,8 +18,10 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.io.File;
-import java.util.Arrays;
-import java.util.Vector;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public class ViewAllFilesToolWindow {
 
@@ -29,107 +33,84 @@ public class ViewAllFilesToolWindow {
 
     public ViewAllFilesToolWindow(ToolWindow toolWindow) {
         hideToolWindowButton.addActionListener(e -> toolWindow.hide(null));
-        refreshToolWindowButton.addActionListener(e -> getFileTree());
+        refreshToolWindowButton.addActionListener(e -> populateFileTree());
 
-        this.getFileTree();
+        this.populateFileTree();
     }
 
-    public void getFileTree() {
-//    tree = new Tree(addNodes(null, new File(".")));
-
+    public void populateFileTree() {
         DataContext dataContext = DataManager.getInstance().getDataContext();
-        Project project = (Project) dataContext.getData("project");
-        System.out.println(project.getBasePath());
+        Object projectObj = dataContext.getData("project");
 
-        tree.setModel(new DefaultTreeModel(addNodes(null, new File(project.getBasePath())), false));
+        // Check if the object is an instance of Project before casting
+        if (!(projectObj instanceof Project)) {
+            return; // or handle this scenario as required
+        }
 
-        tree.addTreeSelectionListener(e -> {
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) e
-                    .getPath().getLastPathComponent();
-            System.out.println(Arrays.toString(e.getPath().getPath()));
-            System.out.println(e.getPath());
-            String[] paths = Arrays.stream(e.getPath().getPath()).map(Object::toString).toArray(String[]::new);
-//      String[] paths = Arrays.stream(e.getPath().getPath()).map(o -> (String) o).toArray(String[]::new);
-            System.out.println(Arrays.toString(paths));
-            System.out.println(String.join("/", paths));
-            System.out.println("You selected " + node);
+        Project project = (Project) projectObj;
+        String basePath = project.getBasePath();
+        if (basePath == null) {
+            return; // or handle this scenario as required
+        }
 
-            System.out.println(String.join("/", paths));
-            System.out.println(Arrays.toString(String.join("/", paths).split("/", 2)));
-            System.out.println(project.getBasePath() + "/" + String.join("/", paths).split("/", 2)[1]);
-
-            VirtualFile fileToOpen = LocalFileSystem.getInstance().findFileByIoFile(new File(project.getBasePath() + "/" + String.join("/", paths).split("/", 2)[1]));
-//      VirtualFile fileToOpen = LocalFileSystem.getInstance().findFileByNioFile(Path.of(String.join("/", paths).split("/", 2)[1]));
-//      VirtualFile fileToOpen = project.getProjectFile().findFileByRelativePath(String.join("/", paths).split("/", 2)[1]);
-
-
-            FileEditorManager.getInstance(project).openTextEditor(
-                    new OpenFileDescriptor(
-                            project,
-                            fileToOpen
-                    ),
-                    true // request focus to editor
-            );
-        });
+        // Run directory loading in a background thread
+        Task.Backgroundable task = new Task.Backgroundable(project, "Loading Files") {
+            public void run(ProgressIndicator indicator) {
+                DefaultTreeModel model = new DefaultTreeModel(addNodes(null, new File(basePath)), false);
+                ApplicationManager.getApplication().invokeLater(() -> tree.setModel(model));
+            }
+        };
+        ProgressManager.getInstance().run(task);
+        tree.addTreeSelectionListener(e -> handleFileSelection(e, project));
     }
 
-    /**
-     * Add nodes from under "dir" into curTop. Highly recursive.
-     */
+    private void handleFileSelection(javax.swing.event.TreeSelectionEvent e, Project project) {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.getPath().getLastPathComponent();
+        List<Object> pathsList = List.of(e.getPath().getPath());
+        String fullPath = constructFullPath(pathsList, project.getBasePath());
+
+        Optional<VirtualFile> fileToOpenOpt = getVirtualFile(fullPath);
+
+        fileToOpenOpt.ifPresent(virtualFile -> FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, virtualFile), true));
+    }
+
+    private String constructFullPath(List<Object> pathsList, String basePath) {
+        String relativePath = String.join(File.separator, pathsList.stream().map(Object::toString).toList());
+        return Paths.get(basePath, relativePath).toString();
+    }
+
+    private Optional<VirtualFile> getVirtualFile(String fullPath) {
+        return Optional.ofNullable(LocalFileSystem.getInstance().findFileByIoFile(new File(fullPath)));
+    }
+
     DefaultMutableTreeNode addNodes(DefaultMutableTreeNode curTop, File dir) {
         String curPath = dir.getPath();
-        String[] dirPathSplit = curPath.split("/");
-        DefaultMutableTreeNode curDir = new DefaultMutableTreeNode(dirPathSplit[dirPathSplit.length - 1]);
-        if (curTop != null) { // should only be null at root
+        String curDirName = Paths.get(curPath).getFileName().toString();
+        DefaultMutableTreeNode curDir = new DefaultMutableTreeNode(curDirName);
+
+        if (curTop != null) {
             curTop.add(curDir);
         }
-        Vector<String> folderNamesVector = new Vector<>();
-        String[] folderContentNames = dir.list();
-        for (String folderContentName : folderContentNames) {
-            //System.out.println("2 - " + folderContentName);
-            folderNamesVector.addElement(folderContentName);
-        }
-        folderNamesVector.sort(String.CASE_INSENSITIVE_ORDER);
-        File currentFile;
-        Vector<String> files = new Vector<>();
-        // Make two passes, one for Dirs and one for Files. This is #1.
-        for (int i = 0; i < folderNamesVector.size(); i++) {
-            String thisObject = folderNamesVector.elementAt(i);
-            String newPath;
-            if (curPath.equals("."))
-                newPath = thisObject;
-            else
-                newPath = curPath + File.separator + thisObject;
-            if ((currentFile = new File(newPath)).isDirectory()) {
-                //System.out.println("Recursion with - " + currentFile.getName());
+
+        List<String> folderContentNames = List.of(Optional.ofNullable(dir.list()).orElse(new String[]{}));
+
+        List<String> folderNames = new ArrayList<>();
+        List<String> files = new ArrayList<>();
+
+        for (String contentName : folderContentNames) {
+            File currentFile = new File(curPath, contentName);
+            if (currentFile.isDirectory()) {
                 addNodes(curDir, currentFile);
             } else {
-                //System.out.println("2 - " + thisObject);
-                files.addElement(thisObject);
+                files.add(contentName);
             }
         }
-        // Pass two: for files.
-        for (int fnum = 0; fnum < files.size(); fnum++) {
-            //System.out.println("3 - " + files.elementAt(fnum));
-            curDir.add(new DefaultMutableTreeNode(files.elementAt(fnum)));
-        }
-        return curDir;
-    }
 
-    File searchFile(File file, String search) {
-        if (file.isDirectory()) {
-            File[] arr = file.listFiles();
-            for (File f : arr) {
-                File found = searchFile(f, search);
-                if (found != null)
-                    return found;
-            }
-        } else {
-            if (file.getName().equals(search)) {
-                return file;
-            }
+        for (String fileName : files) {
+            curDir.add(new DefaultMutableTreeNode(fileName));
         }
-        return null;
+
+        return curDir;
     }
 
     public Dimension getMinimumSize() {

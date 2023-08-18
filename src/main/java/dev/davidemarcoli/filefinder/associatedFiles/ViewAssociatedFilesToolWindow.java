@@ -16,18 +16,21 @@ import dev.davidemarcoli.filefinder.associatedFiles.settings.AppSettingsState;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 public class ViewAssociatedFilesToolWindow {
 
     AppSettingsState settings = AppSettingsState.getInstance();
-    private JList<File> fileList;
+    private JList<Object> fileList;
     private JPanel myToolWindowContent;
 
     public ViewAssociatedFilesToolWindow(ToolWindow toolWindow) {
@@ -49,13 +52,36 @@ public class ViewAssociatedFilesToolWindow {
                     if (index >= 0) {
                         Object o = theList.getModel().getElementAt(index);
                         System.out.println("Double-clicked on: " + o.toString());
+                        if (o instanceof String) return; // ignore headers (file extensions)
                         File file = (File) o;
                         openFileInEditor(toolWindow.getProject(), file);
                     }
                 }
             }
         };
+
+        KeyListener keyListener = new KeyListener() {
+            @Override
+            public void keyTyped(java.awt.event.KeyEvent e) {
+            }
+
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    Object o = fileList.getSelectedValue();
+                    if (o instanceof String) return; // ignore headers (file extensions)
+                    File file = (File) o;
+                    openFileInEditor(toolWindow.getProject(), file);
+                }
+            }
+
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+            }
+        };
+
         fileList.addMouseListener(mouseListener);
+        fileList.addKeyListener(keyListener);
 
         // add custom cell renderer
         fileList.setCellRenderer(new FileListRenderer());
@@ -81,18 +107,49 @@ public class ViewAssociatedFilesToolWindow {
 
         System.out.println("Modified file name: " + modifiedFileName);
 
-        ArrayList<File> files = new ArrayList<>();
+        ArrayList<Object> groupedFiles = new ArrayList<>();
+
+// Use a TreeMap to automatically sort by file extension
+        Map<String, java.util.List<File>> filesByExtension = new TreeMap<>();
 
         for (String folderName : settings.searchedFolders) {
-            files.addAll(searchFiles(new File(project.getBasePath() + "/" + folderName), modifiedFileName));
+            java.util.List<File> foundFiles = searchFiles(new File(project.getBasePath() + "/" + folderName), modifiedFileName);
+            for (File file : foundFiles) {
+                String extension = getFileExtension(file);
+                filesByExtension.putIfAbsent(extension, new ArrayList<>());
+                filesByExtension.get(extension).add(file);
+            }
         }
-        fileList.setListData(files.toArray(File[]::new));
+
+// Now add the files to the groupedFiles list, prefixed by their extension
+        for (Map.Entry<String, java.util.List<File>> entry : filesByExtension.entrySet()) {
+            String extension = entry.getKey();
+            java.util.List<File> filesWithSameExtension = entry.getValue();
+
+            // Add the file extension as a header/group
+            groupedFiles.add(extension.toUpperCase() + " Files:");
+
+            // Add all files with the same extension under the header
+            groupedFiles.addAll(filesWithSameExtension);
+        }
+
+        fileList.setListData(groupedFiles.toArray());
 
 //        ArrayList<String> fileNames = new ArrayList<>();
 //        for (File file : files) {
 //            fileNames.add(file.getName());
 //        }
 //        fileList.setListData(fileNames.toArray(String[]::new));
+    }
+
+    // Helper method to get file extension
+    private static String getFileExtension(File file) {
+        String name = file.getName();
+        int lastIndexOf = name.lastIndexOf(".");
+        if (lastIndexOf == -1) {
+            return "Unknown"; // handle case where file has no extension
+        }
+        return name.substring(lastIndexOf + 1);
     }
 
     ArrayList<File> searchFiles(File file, String search) {
