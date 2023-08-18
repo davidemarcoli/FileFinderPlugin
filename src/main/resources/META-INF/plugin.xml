@@ -28,7 +28,7 @@
         <li>Enhance productivity by reducing search time</li>
     </ul>
 
-    The Associated Files Finder plugin is an essential tool for any developer who wants to streamline their workflow and enhance their productivity. With its powerful features and easy-to-use interface, this plugin is a must-have for any development team.
+    The Files Finder plugin is an essential tool for any developer who wants to streamline their workflow and enhance their productivity. With its powerful features and easy-to-use interface, this plugin is a must-have for any development team.
   ]]></description>
 
     <!-- Product and plugin compatibility requirements.
@@ -38,8 +38,13 @@
     <change-notes><![CDATA[
     <h2>Improvements</h2>
     <ul>
-      <li>Add Custom Plugin Icon</li>
-      <li>Add Better Plugin Description</li>
+      <li>Add Styling to the settings page</li>
+      <li>Remove duplicates from the default file keywords</li>
+      <li>Fix wrong project name in the plugin description</li>
+    </ul>
+    <h2>Bugfixes</h2>
+    <ul>
+      <li>Add Entity to the list of default searched files</li>
     </ul>
 ]]></change-notes>
 

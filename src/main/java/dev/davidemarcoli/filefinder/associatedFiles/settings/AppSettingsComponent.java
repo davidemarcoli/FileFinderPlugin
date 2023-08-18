@@ -5,8 +5,10 @@ package dev.davidemarcoli.filefinder.associatedFiles.settings;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.FormBuilder;
+import com.intellij.util.ui.JBUI;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.util.Arrays;
 
 /**
@@ -15,15 +17,22 @@ import java.util.Arrays;
 public class AppSettingsComponent {
 
     private final JPanel myMainPanel;
-    private final JTextField searchedFolders = new JBTextField();
-    private final JTextField searchedFiles = new JTextField();
-    private final JTextField fileKeywords = new JTextField();
+    private final JTextField searchedFolders = new JBTextField(50);
+    private final JTextField searchedFiles = new JTextField(50);
+    private final JTextField fileKeywords = new JTextField(50);
 
     public AppSettingsComponent() {
+//        Border newBorder = BorderFactory.createEmptyBorder(2, 2, 2, 2);
+
+//        searchedFolders.setMargin(JBUI.insetsBottom(100));
+//        searchedFiles.setMargin(JBUI.insetsBottom(100));
+//        fileKeywords.setMargin(JBUI.insetsBottom(100));
+//        searchedFolders.setBorder(newBorder);
+
         myMainPanel = FormBuilder.createFormBuilder()
-                .addLabeledComponent(new JBLabel("The Folders that should be searched"), searchedFolders, 1, false)
-                .addLabeledComponent(new JBLabel("The File Patters that should be searched (% is replaced with the name)"), searchedFiles, 1, false)
-                .addLabeledComponent(new JBLabel("The Keywords that should be removed when parsing the name"), fileKeywords, 1, false)
+                .addLabeledComponent(new JBLabel("The Folders that should be searched"), searchedFolders, 15, true)
+                .addLabeledComponent(new JBLabel("The File Patters that should be searched (% is replaced with the name)"), searchedFiles, 15, true)
+                .addLabeledComponent(new JBLabel("The Keywords that should be removed when parsing the name"), fileKeywords, 15, true)
 //                .addComponent(myIdeaUserStatus, 1)
                 .addComponentFillVertically(new JPanel(), 0)
                 .getPanel();
