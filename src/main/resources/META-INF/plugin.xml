@@ -38,9 +38,9 @@
     <change-notes><![CDATA[
     <h2>Improvements</h2>
     <ul>
-      <li>Add Styling to the settings page</li>
-      <li>Remove duplicates from the default file keywords</li>
-      <li>Fix wrong project name in the plugin description</li>
+      <li>Add Styling to the file list</li>
+      <li>Grouped files by file type</li>
+      <li>Made file tree building non-blocking (Background Task)</li>
     </ul>
     <h2>Bugfixes</h2>
     <ul>
