@@ -19,7 +19,7 @@ public class ViewAssociatedFilesToolWindowFactory implements ToolWindowFactory {
      */
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         ViewAssociatedFilesToolWindow viewAssociatedFilesToolWindow = new ViewAssociatedFilesToolWindow(toolWindow);
-        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
+        ContentFactory contentFactory = ContentFactory.getInstance();
         Content content = contentFactory.createContent(viewAssociatedFilesToolWindow.getContent(), "", false);
         toolWindow.getContentManager().addContent(content);
     }

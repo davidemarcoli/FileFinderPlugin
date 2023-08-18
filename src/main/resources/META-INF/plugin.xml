@@ -38,13 +38,9 @@
     <change-notes><![CDATA[
     <h2>Improvements</h2>
     <ul>
-      <li>Add Styling to the file list</li>
-      <li>Grouped files by file type</li>
-      <li>Made file tree building non-blocking (Background Task)</li>
-    </ul>
-    <h2>Bugfixes</h2>
-    <ul>
-      <li>Add Entity to the list of default searched files</li>
+      <li>Migrated away from a few deprecated functions</li>
+      <li>Improve code quality</li>
+      <li>Add "Impl" to default search strings</li>
     </ul>
 ]]></change-notes>
 

@@ -19,7 +19,7 @@ public class ViewAllFilesToolWindowFactory implements ToolWindowFactory {
      */
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         ViewAllFilesToolWindow viewAllFilesToolWindow = new ViewAllFilesToolWindow(toolWindow);
-        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
+        ContentFactory contentFactory = ContentFactory.getInstance();
         Content content = contentFactory.createContent(viewAllFilesToolWindow.getContent(), "", false);
         toolWindow.getContentManager().addContent(content);
     }

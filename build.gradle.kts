@@ -4,16 +4,20 @@ plugins {
 }
 
 group = "dev.davidemarcoli"
-version = "0.5"
+version = "0.6"
 
 repositories {
     mavenCentral()
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
-    version.set("2022.1.4")
+    version.set("2023.2")
     type.set("IC") // Target IDE Platform
 
     plugins.set(listOf(/* Plugin Dependencies */))
@@ -22,8 +26,8 @@ intellij {
 tasks {
     // Set the JVM compatibility versions
     withType<JavaCompile> {
-        sourceCompatibility = "11"
-        targetCompatibility = "11"
+        sourceCompatibility = "17"
+        targetCompatibility = "17"
     }
 
     patchPluginXml {
@@ -41,7 +45,7 @@ tasks {
         token.set(System.getenv("INTELLI_PUBLISH_TOKEN"))
     }
 
-//    runIde {
-//        jbrVersion.set("jbr_jcef-11_0_15-linux-x64-b2043.56")
-//    }
+    runIde {
+        jbrVersion.set("jbr_jcef-11_0_15-linux-x64-b2043.56")
+    }
 }

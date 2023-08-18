@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -22,6 +23,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 public class ViewAllFilesToolWindow {
 
@@ -33,29 +36,38 @@ public class ViewAllFilesToolWindow {
 
     public ViewAllFilesToolWindow(ToolWindow toolWindow) {
         hideToolWindowButton.addActionListener(e -> toolWindow.hide(null));
-        refreshToolWindowButton.addActionListener(e -> populateFileTree());
+        refreshToolWindowButton.addActionListener(e -> tryPopulateFileTree());
 
-        this.populateFileTree();
+        tryPopulateFileTree();
     }
 
-    public void populateFileTree() {
-        DataContext dataContext = DataManager.getInstance().getDataContext();
-        Object projectObj = dataContext.getData("project");
+    public void tryPopulateFileTree() {
+        try {
+            populateFileTree();
+        } catch (ExecutionException | TimeoutException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 
-        // Check if the object is an instance of Project before casting
-        if (!(projectObj instanceof Project)) {
-            return; // or handle this scenario as required
+    public void populateFileTree() throws ExecutionException, TimeoutException {
+        DataContext dataContext = DataManager.getInstance().getDataContextFromFocusAsync().blockingGet(2000);
+        if (dataContext == null) {
+            return;
         }
 
-        Project project = (Project) projectObj;
+        Project project = (Project) dataContext.getData("project");
+        if (project == null) {
+            return;
+        }
+
         String basePath = project.getBasePath();
         if (basePath == null) {
             return; // or handle this scenario as required
         }
 
         // Run directory loading in a background thread
-        Task.Backgroundable task = new Task.Backgroundable(project, "Loading Files") {
-            public void run(ProgressIndicator indicator) {
+        Task.Backgroundable task = new Task.Backgroundable(project, "Loading files") {
+            public void run(@NotNull ProgressIndicator indicator) {
                 DefaultTreeModel model = new DefaultTreeModel(addNodes(null, new File(basePath)), false);
                 ApplicationManager.getApplication().invokeLater(() -> tree.setModel(model));
             }
@@ -65,7 +77,6 @@ public class ViewAllFilesToolWindow {
     }
 
     private void handleFileSelection(javax.swing.event.TreeSelectionEvent e, Project project) {
-        DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.getPath().getLastPathComponent();
         List<Object> pathsList = List.of(e.getPath().getPath());
         String fullPath = constructFullPath(pathsList, project.getBasePath());
 
@@ -94,7 +105,6 @@ public class ViewAllFilesToolWindow {
 
         List<String> folderContentNames = List.of(Optional.ofNullable(dir.list()).orElse(new String[]{}));
 
-        List<String> folderNames = new ArrayList<>();
         List<String> files = new ArrayList<>();
 
         for (String contentName : folderContentNames) {

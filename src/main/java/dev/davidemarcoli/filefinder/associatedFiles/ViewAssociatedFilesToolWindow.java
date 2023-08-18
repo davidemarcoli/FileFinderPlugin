@@ -3,6 +3,7 @@
 package dev.davidemarcoli.filefinder.associatedFiles;
 
 import com.intellij.ide.DataManager;
+import com.intellij.openapi.actionSystem.DataConstants;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -13,6 +14,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.util.messages.MessageBus;
 import dev.davidemarcoli.filefinder.associatedFiles.settings.AppSettingsState;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
 public class ViewAssociatedFilesToolWindow {
@@ -35,18 +39,25 @@ public class ViewAssociatedFilesToolWindow {
 
     public ViewAssociatedFilesToolWindow(ToolWindow toolWindow) {
         MessageBus messageBus = toolWindow.getProject().getMessageBus();
-        messageBus.connect().subscribe(FileChangeNotifier.FILE_CHANGE_NOTIFIER_TOPIC, fileName -> {
+
+        messageBus.connect().subscribe(FileChangeNotifier.FILE_CHANGE_NOTIFIER_TOPIC, (FileChangeNotifier) fileName -> {
             System.out.println("File changed: " + fileName);
             if (fileName == null) {
                 fileList.setListData(new File[]{});
                 return;
             }
-            ApplicationManager.getApplication().invokeLater(new Thread(() -> getAssociatedFiles(fileName)));
+            ApplicationManager.getApplication().invokeLater(new Thread(() -> {
+                try {
+                    getAssociatedFiles(fileName);
+                } catch (ExecutionException | TimeoutException e) {
+                    throw new RuntimeException(e);
+                }
+            }));
         });
 
         MouseListener mouseListener = new MouseAdapter() {
             public void mouseClicked(MouseEvent mouseEvent) {
-                JList<String> theList = (JList) mouseEvent.getSource();
+                JList<?> theList = (JList<?>) mouseEvent.getSource();
                 if (mouseEvent.getClickCount() == 2) {
                     int index = theList.locationToIndex(mouseEvent.getPoint());
                     if (index >= 0) {
@@ -87,29 +98,25 @@ public class ViewAssociatedFilesToolWindow {
         fileList.setCellRenderer(new FileListRenderer());
     }
 
-//    final String[] keywords = {"Controller", "Service", "Repository", "Component", "Module", "Model", "DTO", "Mapper", "Interface", "Enum", "Class", "Directive", "Pipe", "Guard", "Resolver", "Interceptor", "Service", "Component", "Module", "Model", "Interface", "Enum", "Class", "Directive", "Pipe", "Guard", "Resolver", "Interceptor"};
+    public void getAssociatedFiles(String fileName) throws ExecutionException, TimeoutException {
 
-    public void getAssociatedFiles(String fileName) {
-
-        DataContext dataContext = DataManager.getInstance().getDataContext();
-        Project project = (Project) dataContext.getData("project");
-//        System.out.println("Project: " + project.getName());
-//        System.out.println("Base path: " + project.getBasePath());
-
-        String modifiedFileName = fileName.substring(0, fileName.lastIndexOf("."));
-        for (String keyword : settings.fileKeywords) {
-            modifiedFileName = modifiedFileName.replaceAll("(?i)" + keyword, "");
+        DataContext dataContext = DataManager.getInstance().getDataContextFromFocusAsync().blockingGet(2000);
+        if (dataContext == null) {
+            return;
         }
-        modifiedFileName = modifiedFileName.replaceAll(" ", "");
-        modifiedFileName = modifiedFileName.replaceAll("-", "");
-        modifiedFileName = modifiedFileName.replaceAll("_", "");
-        modifiedFileName = modifiedFileName.replaceAll("\\.", "");
+
+        Project project = (Project) dataContext.getData("project");
+        if (project == null) {
+            return;
+        }
+
+        String modifiedFileName = getModifiedFileName(fileName);
 
         System.out.println("Modified file name: " + modifiedFileName);
 
         ArrayList<Object> groupedFiles = new ArrayList<>();
 
-// Use a TreeMap to automatically sort by file extension
+        // Use a TreeMap to automatically sort by file extension
         Map<String, java.util.List<File>> filesByExtension = new TreeMap<>();
 
         for (String folderName : settings.searchedFolders) {
@@ -121,7 +128,7 @@ public class ViewAssociatedFilesToolWindow {
             }
         }
 
-// Now add the files to the groupedFiles list, prefixed by their extension
+        // Now add the files to the groupedFiles list, prefixed by their extension
         for (Map.Entry<String, java.util.List<File>> entry : filesByExtension.entrySet()) {
             String extension = entry.getKey();
             java.util.List<File> filesWithSameExtension = entry.getValue();
@@ -134,12 +141,27 @@ public class ViewAssociatedFilesToolWindow {
         }
 
         fileList.setListData(groupedFiles.toArray());
+    }
 
-//        ArrayList<String> fileNames = new ArrayList<>();
-//        for (File file : files) {
-//            fileNames.add(file.getName());
-//        }
-//        fileList.setListData(fileNames.toArray(String[]::new));
+    @NotNull
+    private String getModifiedFileName(String fileName) {
+        String modifiedFileName;
+
+        int lastIndexOfPeriod = fileName.lastIndexOf(".");
+        if (lastIndexOfPeriod == -1) {
+            modifiedFileName = fileName;
+        } else {
+            modifiedFileName = fileName.substring(0, lastIndexOfPeriod);
+        }
+
+        for (String keyword : settings.fileKeywords) {
+            modifiedFileName = modifiedFileName.replaceAll("(?i)" + keyword, "");
+        }
+        modifiedFileName = modifiedFileName.replaceAll(" ", "");
+        modifiedFileName = modifiedFileName.replaceAll("-", "");
+        modifiedFileName = modifiedFileName.replaceAll("_", "");
+        modifiedFileName = modifiedFileName.replaceAll("\\.", "");
+        return modifiedFileName;
     }
 
     // Helper method to get file extension
@@ -156,10 +178,6 @@ public class ViewAssociatedFilesToolWindow {
 
         ArrayList<File> found = new ArrayList<>();
 
-//        String[] possibleFilePattern = {search + "Service.java", search + "ServiceImpl.java", search + "Controller.java", search + "Repository.java", search + "DTO.java", search + "Mapper.java",
-//                search + ".ts", search + ".service.ts", search + "-component.ts", search + "-component.html", search + "-component.scss", search + "-component.spec.ts"};
-
-
         String[] possibleFilePattern = Arrays.stream(settings.searchedFiles).map(s -> s.replaceAll("%", search)
         ).toArray(String[]::new);
 
@@ -171,7 +189,6 @@ public class ViewAssociatedFilesToolWindow {
                 found.addAll(foundFiles);
             }
         } else {
-//            System.out.println("File: " + file.getName());
             for (String pattern : possibleFilePattern) {
                 Pattern regexPattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
                 if (regexPattern.matcher(file.getName()).matches()) {
