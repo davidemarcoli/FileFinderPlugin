@@ -36,11 +36,10 @@
     <depends>com.intellij.modules.platform</depends>
 
     <change-notes><![CDATA[
-    <h2>Improvements</h2>
+    <h2>Dependencies</h2>
     <ul>
-      <li>Migrated away from a few deprecated functions</li>
-      <li>Improve code quality</li>
-      <li>Add "Impl" to default search strings</li>
+      <li>Upgrade to Gradle 8.3</li>
+      <li>Set minimum Intellij Version to 222</li>
     </ul>
 ]]></change-notes>
 
